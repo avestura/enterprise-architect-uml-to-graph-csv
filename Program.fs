@@ -2,6 +2,11 @@
 open FSharp.Data
 open System.IO
 
+[<Literal>]
+let ControlEdgesFileName = "control.edges.csv"
+[<Literal>]
+let PlanningEdgesFileName = "planning.edges.csv"
+
 type ControlXMI = XmlProvider<"control.xmi">
 type PlanningXMI = XmlProvider<"planning.xmi">
 
@@ -41,8 +46,8 @@ let saveGraph name links =
     let aggregateLinks (n:GraphLink) = sprintf "%s,%s,%s" n.source n.target n.linkType
     File.WriteAllText (name, String.Join ("\n", links |> Array.map aggregateLinks |> Array.distinct))
 
-let saveControl = extractControlLinks() |> saveGraph "control.edges.csv"
-let savePlanning = extractPlanningLinks() |> saveGraph "planning.edges.csv" 
+let saveControl = extractControlLinks() |> saveGraph ControlEdgesFileName
+let savePlanning = extractPlanningLinks() |> saveGraph PlanningEdgesFileName 
 
 let loadLinks fileName = 
     let content = File.ReadAllLines fileName

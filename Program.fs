@@ -74,8 +74,11 @@ let safeLoad = function
 type 'a Graph = 'a GraphNode list
 and 'a GraphNode = {
     value: 'a
-    outLinks: 'a GraphNode list
+    links: ('a GraphNode * string * LinkDirection) list
 }
+and LinkDirection =
+| In
+| Out
 
 type ProjectGraph = string Graph
 
@@ -87,27 +90,60 @@ let transformLinksToGraph (links:GraphLink[]) =
             let targetOption = currentGraph |> List.tryFind (fun n -> n.value = l.target)
             match sourceOption, targetOption with
             | None, None ->
-                let source = { value = l.source; outLinks = [] }
-                let target = { value = l.target; outLinks = [] }
+                let source = { value = l.source; links=[] }
+                let target = { value = l.target; links=[] }
                 remainingLinks |> buildGraph (currentGraph@[source; target])
             | None, Some _ ->
-                let source = { value = l.source; outLinks = [] }
+                let source = { value = l.source; links=[] }
                 remainingLinks |> buildGraph (currentGraph@[source])
             | Some _, None ->
-                let target = { value = l.target; outLinks = [] }
+                let target = { value = l.target; links=[] }
                 remainingLinks |> buildGraph (currentGraph@[target])
             | Some source, Some target ->
-                let newGraph = currentGraph |> List.except [source]
-                let newSource = { source with outLinks = (source.outLinks)@[target]}
-                newGraph@[newSource]
+                let removedSourceGraph = currentGraph |> List.except [source; target]
+                let newSource = { source with links = (source.links)@[target, l.linkType, Out] }
+                let newTarget = { target with links = (target.links)@[source, l.linkType, In] }
+                let newGraph = removedSourceGraph@[newSource; newTarget]
+
+                rem |> buildGraph newGraph
          | [] -> currentGraph
             
         
     links |> Array.toList |> buildGraph []
 
+let getGeneralizationLinks links =
+    links |> List.filter (fun (_, linkType, _) -> linkType = "Generalization")
+
+let getAssociationLinks links =
+    links |> List.filter (fun (_, linkType, _) -> linkType = "Association")
+
+
+// let findDesignPattern (g1:ProjectGraph) (g2:ProjectGraph) = 
+//     match g1 with
+//     | n1::nodes1 -> 
+//         match g2 with
+//         | n2::nodes2 ->
+//             let gen1Links = getGeneralizationLinks n1.links
+//             let gen2Links = getGeneralizationLinks n2.links
+//             for (_, _, d1) in gen1Links do
+//                 for (_, _, d2) in gen2Links do
+//                     if d1 = d2 then
+//                         0
+//                     else
+//                         0
+            
+//         | [] -> 0
+//     | [] -> 0
+
 [<EntryPoint>]
 let main argv =
     let controlEdges = safeLoad Control
-    let controlNodes = safeLoad Planning
+    let planningEdges = safeLoad Planning
+
+    let controlGraph = transformLinksToGraph controlEdges
+    let planningGraph = transformLinksToGraph planningEdges
+
+    controlGraph |> List.length |> printfn "%d"
+    planningGraph |> List.length |> printfn "%d"
     
     0 // return an integer exit code

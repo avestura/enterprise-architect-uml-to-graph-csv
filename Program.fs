@@ -5,16 +5,16 @@ open System.IO
 type ControlXMI = XmlProvider<"control.xmi">
 type PlanningXMI = XmlProvider<"planning.xmi">
 
-type GraphNodes = {
+type GraphLink = {
     source: string
     target: string
     linkType: string
 }
 
-let doForControl =
+let extractControlLinks () =
     let file = ControlXMI.GetSample()
 
-    let controlNodes = 
+    let controlLinks = 
         file.Extension.Connectors 
         |> Array.map (fun item -> {
             source = item.Source.Model.Name
@@ -22,15 +22,12 @@ let doForControl =
             linkType = item.Properties.EaType
         })
 
-    let aggregateNode (n:GraphNodes) =
-        sprintf "%s,%s,%s" n.source n.target n.linkType
+    controlLinks
 
-    File.WriteAllText ("control.edges.csv", String.Join ("\n", controlNodes |> Array.map aggregateNode |> Array.distinct))
-
-let doForPlanning =
+let extractPlanningLinks () =
     let file = PlanningXMI.GetSample()
 
-    let controlNodes = 
+    let planningLinks = 
         file.Extension.Connectors 
         |> Array.map (fun item -> {
             source = item.Source.Model.Name
@@ -38,15 +35,26 @@ let doForPlanning =
             linkType = item.Properties.EaType
         })
 
-    let aggregateNode (n:GraphNodes) =
-        sprintf "%s,%s,%s" n.source n.target n.linkType
+    planningLinks
 
-    File.WriteAllText ("planning.edges.csv", String.Join ("\n", controlNodes |> Array.map aggregateNode |> Array.distinct))
+let saveGraph name links =
+    let aggregateLinks (n:GraphLink) = sprintf "%s,%s,%s" n.source n.target n.linkType
+    File.WriteAllText (name, String.Join ("\n", links |> Array.map aggregateLinks |> Array.distinct))
 
+let saveControl = extractControlLinks() |> saveGraph "control.edges.csv"
+let savePlanning = extractPlanningLinks() |> saveGraph "planning.edges.csv" 
 
+let loadLinks fileName = 
+    let content = File.ReadAllLines fileName
+    let getLink (line:string) =
+        let tokens = line.Split(",")
+
+        { source = tokens.[0]; target = tokens.[1]; linkType = tokens.[2] }
+    
+    content |> Array.map getLink
 
 [<EntryPoint>]
 let main argv =
-    doForControl
+    
     
     0 // return an integer exit code

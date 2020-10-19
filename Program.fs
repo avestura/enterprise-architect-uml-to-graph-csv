@@ -118,23 +118,6 @@ let getAssociationLinks links =
     links |> List.filter (fun (_, linkType, _) -> linkType = "Association")
 
 
-// let findDesignPattern (g1:ProjectGraph) (g2:ProjectGraph) = 
-//     match g1 with
-//     | n1::nodes1 -> 
-//         match g2 with
-//         | n2::nodes2 ->
-//             let gen1Links = getGeneralizationLinks n1.links
-//             let gen2Links = getGeneralizationLinks n2.links
-//             for (_, _, d1) in gen1Links do
-//                 for (_, _, d2) in gen2Links do
-//                     if d1 = d2 then
-//                         0
-//                     else
-//                         0
-            
-//         | [] -> 0
-//     | [] -> 0
-
 [<EntryPoint>]
 let main argv =
     let controlEdges = safeLoad Control
